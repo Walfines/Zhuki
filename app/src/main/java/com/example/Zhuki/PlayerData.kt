@@ -1,6 +1,5 @@
 package com.example.Zhuki
 
-
 data class Zodiac(
     val name: String,
     val iconRes: Int
