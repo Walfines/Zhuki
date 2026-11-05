@@ -1,6 +1,5 @@
 package com.example.Zhuki
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -34,18 +33,23 @@ fun GameScreen(
     var nextId by remember { mutableLongStateOf(0L) }
     var gameFinished by remember { mutableStateOf(false) }
 
+    val currentOnGameOver by rememberUpdatedState(onGameOver)
+
+    // Таймер
     LaunchedEffect(Unit) {
-        while (timeLeft > 0) {
+        while (timeLeft > 0 && !gameFinished) {
             delay(1000)
             timeLeft--
         }
         if (!gameFinished) {
             gameFinished = true
-            onGameOver(stats)
+            currentOnGameOver(stats)
         }
     }
 
-    LaunchedEffect(maxRoaches) {
+    // Спавн
+    LaunchedEffect(maxRoaches, gameFinished) {
+        if (gameFinished) return@LaunchedEffect
         while (isActive && !gameFinished) {
             if (bugs.size < maxRoaches) {
                 bugs = bugs + spawnBug(nextId++, speedMultiplier)
@@ -54,17 +58,31 @@ fun GameScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+    // Движение
+    LaunchedEffect(gameFinished) {
+        if (gameFinished) return@LaunchedEffect
         while (isActive && !gameFinished) {
             delay(16)
-            bugs = bugs.map { bug ->
+            val newList = ArrayList<Bug>(bugs.size)
+            for (bug in bugs) {
                 var nx = bug.x + bug.vx
                 var ny = bug.y + bug.vy
                 var nvx = bug.vx
                 var nvy = bug.vy
                 if (nx < 0f || nx > 1f) { nvx = -nvx; nx = nx.coerceIn(0f, 1f) }
                 if (ny < 0f || ny > 1f) { nvy = -nvy; ny = ny.coerceIn(0f, 1f) }
-                bug.copy(x = nx, y = ny, vx = nvx, vy = nvy)
+                newList.add(bug.copy(x = nx, y = ny, vx = nvx, vy = nvy))
+            }
+            bugs = newList
+        }
+    }
+
+    // ПРИ ПЕРЕКЛЮЧЕНИИ ВКЛАДКИ ИГРА ПРЕРЫВАЕТСЯ
+    DisposableEffect(Unit) {
+        onDispose {
+            if (!gameFinished) {
+                gameFinished = true
+                currentOnGameOver(stats)
             }
         }
     }
@@ -85,16 +103,10 @@ fun GameScreen(
                         dx * dx + dy * dy <= r * r
                     }
                     if (hit != null) {
-                        stats = stats.copy(
-                            score = stats.score + hit.type.score,
-                            hits = stats.hits + 1
-                        )
+                        stats = stats.copy(score = stats.score + hit.type.score, hits = stats.hits + 1)
                         bugs = bugs - hit
                     } else {
-                        stats = stats.copy(
-                            score = (stats.score - 1).coerceAtLeast(0),
-                            misses = stats.misses + 1
-                        )
+                        stats = stats.copy(score = (stats.score - 1).coerceAtLeast(0), misses = stats.misses + 1)
                     }
                 }
             }
@@ -104,23 +116,18 @@ fun GameScreen(
             val pxDp = with(density) { (bug.x * fieldSize.width).toDp() }
             val pyDp = with(density) { (bug.y * fieldSize.height).toDp() }
             Box(
-                modifier = Modifier.offset(
-                    x = pxDp - bug.type.sizeDp.dp / 2,
-                    y = pyDp - bug.type.sizeDp.dp / 2
-                )
+                modifier = Modifier.offset(x = pxDp - bug.type.sizeDp.dp / 2, y = pyDp - bug.type.sizeDp.dp / 2)
             ) {
                 Image(
                     painter = painterResource(id = bug.type.iconRes),
-                    contentDescription = bug.type.displayName,
+                    contentDescription = null,
                     modifier = Modifier.size(bug.type.sizeDp.dp)
                 )
             }
         }
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Очки: ${stats.score}", style = MaterialTheme.typography.titleMedium)
@@ -139,11 +146,7 @@ private fun spawnBug(id: Long, speedMultiplier: Float): Bug {
     val baseSpeed = 0.004f * speedMultiplier * type.speedFactor
     val angle = rnd.nextFloat() * 2f * Math.PI.toFloat()
     return Bug(
-        id = id,
-        type = type,
-        x = rnd.nextFloat(),
-        y = rnd.nextFloat(),
-        vx = (cos(angle) * baseSpeed),
-        vy = (sin(angle) * baseSpeed)
+        id = id, type = type, x = rnd.nextFloat(), y = rnd.nextFloat(),
+        vx = cos(angle) * baseSpeed, vy = sin(angle) * baseSpeed
     )
 }

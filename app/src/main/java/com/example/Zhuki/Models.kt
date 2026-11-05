@@ -1,6 +1,5 @@
 package com.example.Zhuki
 
-// ====== Зодиак и игрок ======
 
 data class Zodiac(
     val name: String,
@@ -16,7 +15,6 @@ data class PlayerData(
     val zodiac: Zodiac
 )
 
-// ====== Игра «Жуки» ======
 
 enum class BugType(
     val displayName: String,

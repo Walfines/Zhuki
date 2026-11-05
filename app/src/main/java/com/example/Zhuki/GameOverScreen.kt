@@ -1,9 +1,7 @@
 package com.example.Zhuki
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -12,12 +10,11 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun GameOverScreen(
     stats: GameStats,
-    onRestart: () -> Unit
+    onRestart: () -> Unit,
+    onChangeUser: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -29,12 +26,8 @@ fun GameOverScreen(
         Text("Промахи: ${stats.misses}")
         Text("Точность: ${"%.1f".format(stats.accuracy)} %")
         Spacer(Modifier.height(32.dp))
-        Button(
-            onClick = onRestart,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Играть снова")
-        }
+        Button(onClick = onRestart, modifier = Modifier.fillMaxWidth()) { Text("Играть снова") }
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(onClick = onChangeUser, modifier = Modifier.fillMaxWidth()) { Text("Сменить игрока") }
     }
 }
-
